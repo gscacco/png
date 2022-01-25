@@ -82,8 +82,9 @@ proc printpHYs(buffer: BufferType) =
   let dimy: float = (float height)/(float ppuy)*100
   let unit = buffer[8]
   echo "---- pHYs ----"
-  echo fmt"Pixel per unit x {ppux} ({dimx:>4.3f} cm x {dimy:>4.3f} cm)"
+  echo fmt"Pixel per unit x {ppux}"
   echo fmt"Pixel per unit y {ppuy}"
+  echo fmt"{dimx:>4.3f} cm x {dimy:>4.3f} cm"
   echo fmt"Unit {unit}"
 
 proc printiCCP(buffer: BufferType) =
@@ -126,7 +127,24 @@ proc printtEXt(buffer: BufferType, size: uint) =
   echo fmt"{key.join}: {text.join}"
 
 proc printbKGD(buffer: BufferType) =
-  discard
+  echo "---- bKGD ----"
+  case colorType:
+    of 3:
+      # indexed color
+      let p = buffer[0]
+      echo fmt"palette {p}"
+    of 0, 4:
+      # grayscale
+      let g = buffer.readUInt16BE(0)
+      echo fmt"gray {g}"
+    of 2, 6:
+      # truecolor
+      let r = buffer.readUInt16BE(0)
+      let g = buffer.readUInt16BE(2)
+      let b = buffer.readUInt16BE(4)
+      echo fmt"r {r} g {g} b {b}"
+    else:
+      discard
 
 proc readPng(fname: string) =
 

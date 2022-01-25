@@ -24,5 +24,6 @@ At the moment the tool reads the following block types:
 - iCCP
 - tIME
 - tEXt
+- bKGD
 
 Details on the standard can be found here: http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html
