@@ -7,12 +7,16 @@ import os as os
 # http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html
 
 const maxBlockSize = 100*1024
+
 var width: uint = 0
 var height: uint = 0
+var colorType: uint = 0
+
 type
   CustomRange = object
     low: uint
     high: uint
+  BufferType = array[maxBlockSize, uint8]
 
 iterator items(range: CustomRange): uint =
   var i = range.low
@@ -30,27 +34,28 @@ proc readBE32(fs: FileStream): uint32 =
   bigEndian32(addr be, addr data)
   return be
 
-proc readUInt32BE(buffer: array[maxBlockSize, uint8], start: uint): uint32 =
+proc readUInt32BE(buffer: BufferType, start: uint): uint32 =
   var raw: uint32
   var value: uint32
   copyMem(raw.addr, unsafeAddr buffer[start], 4)
   bigEndian32(addr value, addr raw)
   return value
 
-proc readUInt16BE(buffer: array[maxBlockSize, uint8], start: uint): uint32 =
+proc readUInt16BE(buffer: BufferType, start: uint): uint32 =
   var raw: uint16
   var value: uint16
   copyMem(raw.addr, unsafeAddr buffer[start], 2)
   bigEndian16(addr value, addr raw)
   return value
 
-proc printIHDR(buffer: array[maxBlockSize, uint8]) =
+proc printIHDR(buffer: BufferType) =
   let w = buffer.readUInt32BE(0)
   let h = buffer.readUInt32BE(4)
   width = (uint)w
   height = (uint)h
   let depth = buffer[8]
   let ctype = buffer[9]
+  colorType = ctype
   let compression = buffer[10]
   let filter = buffer[11]
   let interlace = buffer[12]
@@ -59,18 +64,18 @@ proc printIHDR(buffer: array[maxBlockSize, uint8]) =
   echo fmt"depth {depth} color type {ctype}"
   echo fmt"compression {compression} filter {filter} interlace {interlace}"
 
-proc printsRGB(buffer: array[maxBlockSize, uint8]) =
+proc printsRGB(buffer: BufferType) =
   let rgb = buffer[0]
   echo "---- sRGB ----"
   echo fmt"RGB {rgb}"
 
-proc printgAMA(buffer: array[maxBlockSize, uint8]) =
+proc printgAMA(buffer: BufferType) =
   let g = buffer.readUInt32BE(0)
   let fg: float = float(g) * (1/2.2)
   echo "---- gAMA ----"
   echo fmt"GAMMA {fg:>9.3f} ({g})"
 
-proc printpHYs(buffer: array[maxBlockSize, uint8]) =
+proc printpHYs(buffer: BufferType) =
   let ppux = buffer.readUInt32BE(0)
   let ppuy = buffer.readUInt32BE(4)
   let dimx: float = (float width)/(float ppux)*100
@@ -81,7 +86,7 @@ proc printpHYs(buffer: array[maxBlockSize, uint8]) =
   echo fmt"Pixel per unit y {ppuy}"
   echo fmt"Unit {unit}"
 
-proc printiCCP(buffer: array[maxBlockSize, uint8]) =
+proc printiCCP(buffer: BufferType) =
   var s: seq[char]
   for v in buffer:
     if v != 0:
@@ -94,7 +99,7 @@ proc printiCCP(buffer: array[maxBlockSize, uint8]) =
   echo fmt"Profile name: {pname}"
   echo fmt"Compression method: {cmethod}"
 
-proc printtIME(buffer: array[maxBlockSize, uint8]) =
+proc printtIME(buffer: BufferType) =
   let year = buffer.readUInt16BE(0)
   let month = buffer[2]
   let day = buffer[3]
@@ -105,7 +110,7 @@ proc printtIME(buffer: array[maxBlockSize, uint8]) =
   echo "---- tIME ----"
   echo fmt"Last image modification: {year}/{month}/{day} {hour}:{min}:{sec}"
 
-proc printtEXt(buffer: array[maxBlockSize, uint8], size: uint) =
+proc printtEXt(buffer: BufferType, size: uint) =
   var key: seq[char]
   var text: seq[char]
   var i: uint = 0
@@ -120,6 +125,8 @@ proc printtEXt(buffer: array[maxBlockSize, uint8], size: uint) =
   echo "---- tEXt ----"
   echo fmt"{key.join}: {text.join}"
 
+proc printbKGD(buffer: BufferType) =
+  discard
 
 proc readPng(fname: string) =
 
@@ -134,9 +141,9 @@ proc readPng(fname: string) =
   while true:
     let size = fs.readBE32()
     let btype = fs.readStr(4)
-    
 
-    var buffer: array[maxBlockSize, uint8]
+
+    var buffer: BufferType
     discard fs.readData(addr buffer, int size)
 
 
@@ -155,6 +162,8 @@ proc readPng(fname: string) =
         printtIME(buffer)
       of "tEXt":
         printtEXt(buffer, size)
+      of "bKGD":
+        printbKGD(buffer)
       else:
         echo fmt"Type {btype} {size} bytes"
 
