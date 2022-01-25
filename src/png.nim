@@ -129,5 +129,5 @@ proc readPng(fname: string) =
 when isMainModule:
   if os.paramCount() < 1:
     echo "Usage:: png <fname>"
-    quit(-2)
+    quit(0)
   readPng(os.paramStr(1))
