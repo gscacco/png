@@ -95,13 +95,6 @@ proc printiCCP(buffer: array[maxBlockSize, uint8]) =
   echo fmt"Compression method: {cmethod}"
 
 proc printtIME(buffer: array[maxBlockSize, uint8]) =
-  #[ Year:   2 bytes (complete; for example, 1995, not 95)
-    Month:  1 byte (1-12)
-    Day:    1 byte (1-31)
-    Hour:   1 byte (0-23)
-    Minute: 1 byte (0-59)
-    Second: 1 byte (0-60)    (yes, 60, for leap seconds; not 61,
-      a common error) ]#
   let year = buffer.readUInt16BE(0)
   let month = buffer[2]
   let day = buffer[3]
@@ -111,6 +104,21 @@ proc printtIME(buffer: array[maxBlockSize, uint8]) =
 
   echo "---- tIME ----"
   echo fmt"Last image modification: {year}/{month}/{day} {hour}:{min}:{sec}"
+
+proc printtEXt(buffer: array[maxBlockSize, uint8], size: uint) =
+  var key: seq[char]
+  var text: seq[char]
+  var i: uint = 0
+
+  while i < size and buffer[i] != 0:
+    key.add char buffer[i]
+    i+=1
+  i+=1
+  while i < size and buffer[i] != 0:
+    text.add char buffer[i]
+    i+=1
+  echo "---- tEXt ----"
+  echo fmt"{key.join}: {text.join}"
 
 
 proc readPng(fname: string) =
@@ -126,7 +134,7 @@ proc readPng(fname: string) =
   while true:
     let size = fs.readBE32()
     let btype = fs.readStr(4)
-    echo fmt"Type {btype} {size} bytes"
+    
 
     var buffer: array[maxBlockSize, uint8]
     discard fs.readData(addr buffer, int size)
@@ -145,8 +153,10 @@ proc readPng(fname: string) =
         printiCCP(buffer)
       of "tIME":
         printtIME(buffer)
+      of "tEXt":
+        printtEXt(buffer, size)
       else:
-        discard
+        echo fmt"Type {btype} {size} bytes"
 
     if size == 0:
       break

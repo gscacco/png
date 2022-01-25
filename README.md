@@ -23,5 +23,6 @@ At the moment the tool reads the following block types:
 - pHYs
 - iCCP
 - tIME
+- tEXt
 
 Details on the standard can be found here: http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html
