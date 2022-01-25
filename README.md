@@ -22,5 +22,6 @@ At the moment the tool reads the following block types:
 - gAMA
 - pHYs
 - iCCP
+- tIME
 
 Details on the standard can be found here: http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html

@@ -37,6 +37,13 @@ proc readUInt32BE(buffer: array[maxBlockSize, uint8], start: uint): uint32 =
   bigEndian32(addr value, addr raw)
   return value
 
+proc readUInt16BE(buffer: array[maxBlockSize, uint8], start: uint): uint32 =
+  var raw: uint16
+  var value: uint16
+  copyMem(raw.addr, unsafeAddr buffer[start], 2)
+  bigEndian16(addr value, addr raw)
+  return value
+
 proc printIHDR(buffer: array[maxBlockSize, uint8]) =
   let w = buffer.readUInt32BE(0)
   let h = buffer.readUInt32BE(4)
@@ -87,6 +94,24 @@ proc printiCCP(buffer: array[maxBlockSize, uint8]) =
   echo fmt"Profile name: {pname}"
   echo fmt"Compression method: {cmethod}"
 
+proc printtIME(buffer: array[maxBlockSize, uint8]) =
+  #[ Year:   2 bytes (complete; for example, 1995, not 95)
+    Month:  1 byte (1-12)
+    Day:    1 byte (1-31)
+    Hour:   1 byte (0-23)
+    Minute: 1 byte (0-59)
+    Second: 1 byte (0-60)    (yes, 60, for leap seconds; not 61,
+      a common error) ]#
+  let year = buffer.readUInt16BE(0)
+  let month = buffer[2]
+  let day = buffer[3]
+  let hour = buffer[4]
+  let min = buffer[5]
+  let sec = buffer[6]
+
+  echo "---- tIME ----"
+  echo fmt"Last image modification: {year}/{month}/{day} {hour}:{min}:{sec}"
+
 
 proc readPng(fname: string) =
 
@@ -118,6 +143,8 @@ proc readPng(fname: string) =
         printpHYs(buffer)
       of "iCCP":
         printiCCP(buffer)
+      of "tIME":
+        printtIME(buffer)
       else:
         discard
 
