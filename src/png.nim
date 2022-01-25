@@ -205,6 +205,12 @@ proc readPng(fname: string) =
         printbKGD(buffer)
       of "cHRM":
         printcHRM(buffer)
+      of "IDAT":
+        # data bytes discarded here
+        discard
+      of "IEND":
+        # end block
+        discard
       else:
         echo fmt"Type {btype} {size} bytes"
 
