@@ -146,6 +146,27 @@ proc printbKGD(buffer: BufferType) =
     else:
       discard
 
+proc printcHRM(buffer: BufferType) =
+  proc toFloat(val: uint32): float =
+    (float val)/(float 100000)
+  let wpx = buffer.readUInt32BE(0).toFloat
+  let wpy = buffer.readUInt32BE(4).toFloat
+
+  let redx = buffer.readUInt32BE(8).toFloat
+  let redy = buffer.readUInt32BE(12).toFloat
+
+  let greenx = buffer.readUInt32BE(16).toFloat
+  let greeny = buffer.readUInt32BE(20).toFloat
+
+  let bluex = buffer.readUInt32BE(24).toFloat
+  let bluey = buffer.readUInt32BE(28).toFloat
+
+  echo "---- cHRM ----"
+  echo fmt"White point {wpx} {wpy}"
+  echo fmt"Red {redx} {redy}"
+  echo fmt"Green {greenx} {greeny}"
+  echo fmt"Blue {bluex} {bluey}"
+
 proc readPng(fname: string) =
 
   let fs = newFileStream(fname, fmRead)
@@ -182,6 +203,8 @@ proc readPng(fname: string) =
         printtEXt(buffer, size)
       of "bKGD":
         printbKGD(buffer)
+      of "cHRM":
+        printcHRM(buffer)
       else:
         echo fmt"Type {btype} {size} bytes"
 
